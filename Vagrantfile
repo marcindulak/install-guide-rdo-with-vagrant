@@ -1688,9 +1688,8 @@ SCRIPT
     # Create m1.nano flavor
     machine.vm.provision :shell, :inline => 'source /root/admin-openrc&& openstack flavor create --id 0 --vcpus 1 --ram 64 --disk 1 m1.nano'
     # Generate a key pair (as vagrant user)
-    machine.vm.provision :shell, :inline => 'sudo su - vagrant -c \"ssh-keygen -f ~/.ssh/id_rsa -t rsa -q -N ""\"'
+    machine.vm.provision :shell, :inline => "sudo su - vagrant -c \"ssh-keygen -f ~/.ssh/id_rsa -t rsa -q -N ''\""
     machine.vm.provision :shell, :inline => 'source /root/demo-openrc&& openstack keypair create --public-key ~vagrant/.ssh/id_rsa.pub mykey'
-    #machine.vm.provision :shell, :inline => 'setfacl -m u:vagrant:r ~/.ssh/id_rsa ~/.ssh/id_rsa.pub'
     machine.vm.provision :shell, :inline => 'source /root/demo-openrc&& openstack keypair list'
     # Add security group rules
     machine.vm.provision :shell, :inline => 'source /root/demo-openrc&& openstack security group rule create --proto icmp default'

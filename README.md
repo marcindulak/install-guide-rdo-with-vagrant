@@ -165,9 +165,9 @@ Launching an instance is performed as **demo** user according to https://docs.op
 
         $ vagrant ssh controller -c 'source /root/demo-openrc&& ping -W 1 -c 4 `openstack server show selfservice-instance -f json -c addresses |  jq ".addresses" | tr -d \" | tr -d " " | cut -d, -f2`'
 
-- "Access your instance using SSH". Note that this command is executed as **vagrant** user, who has access to **root** ssh private key granted using `setfacl`:
+- "Access your instance using SSH".
 
-        $ vagrant ssh controller -c 'source /root/demo-openrc&& ssh -i /root/.ssh/id_rsa -o StrictHostKeyChecking=no cirros@`openstack server show selfservice-instance -f json -c addresses |  jq ".addresses" | tr -d \" | tr -d " " | cut -d, -f2` ip addr show'
+        $ vagrant ssh controller -c 'source /root/demo-openrc&& ssh -i ~vagrant/.ssh/id_rsa -o StrictHostKeyChecking=no cirros@`openstack server show selfservice-instance -f json -c addresses |  jq ".addresses" | tr -d \" | tr -d " " | cut -d, -f2` ip addr show'
 
 Attach block storage to the instance according to https://docs.openstack.org/ocata/install-guide-rdo/launch-instance-cinder.html
 
@@ -184,7 +184,7 @@ Attach block storage to the instance according to https://docs.openstack.org/oca
 
    and verify the presence of the volume:
 
-        $ vagrant ssh controller -c "source /root/demo-openrc&& ssh -i /root/.ssh/id_rsa -o StrictHostKeyChecking=no cirros@`openstack server show selfservice-instance -f json -c addresses |  jq ".addresses" | tr -d \" | tr -d " " | cut -d, -f2` sudo fdisk -l /dev/vda"
+        $ vagrant ssh controller -c "source /root/demo-openrc&& ssh -i ~vagrant/.ssh/id_rsa -o StrictHostKeyChecking=no cirros@`openstack server show selfservice-instance -f json -c addresses |  jq ".addresses" | tr -d \" | tr -d " " | cut -d, -f2` sudo fdisk -l /dev/vda"
 
 
 The horizon dashboard is accessible on and **outside** of your `vagrant` host port 8080. If you prefer to disable external access to this port
