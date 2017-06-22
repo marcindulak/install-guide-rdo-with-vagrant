@@ -1687,9 +1687,10 @@ SCRIPT
     machine.vm.provision :shell, :inline => 'source /root/demo-openrc&& ping -W 1 -c 4 `openstack router show router --column external_gateway_info -f value | jq ".external_fixed_ips[].ip_address" | tr -d \"`'
     # Create m1.nano flavor
     machine.vm.provision :shell, :inline => 'source /root/admin-openrc&& openstack flavor create --id 0 --vcpus 1 --ram 64 --disk 1 m1.nano'
-    # Generate a key pair
+    # Generate a key pair (as vagrant user)
     machine.vm.provision :shell, :inline => 'sudo su - vagrant -c \"ssh-keygen -f ~/.ssh/id_rsa -t rsa -q -N ""\"'
     machine.vm.provision :shell, :inline => 'source /root/demo-openrc&& openstack keypair create --public-key ~vagrant/.ssh/id_rsa.pub mykey'
+    #machine.vm.provision :shell, :inline => 'setfacl -m u:vagrant:r ~/.ssh/id_rsa ~/.ssh/id_rsa.pub'
     machine.vm.provision :shell, :inline => 'source /root/demo-openrc&& openstack keypair list'
     # Add security group rules
     machine.vm.provision :shell, :inline => 'source /root/demo-openrc&& openstack security group rule create --proto icmp default'
@@ -1843,6 +1844,7 @@ SCRIPT
     machine.vm.provision :shell, :inline => 'systemctl restart openstack-nova-api.service'
     machine.vm.provision :shell, :inline => 'systemctl enable openstack-cinder-api.service openstack-cinder-scheduler.service'
     machine.vm.provision :shell, :inline => 'systemctl start openstack-cinder-api.service openstack-cinder-scheduler.service'
+    machine.vm.provision :shell, :inline => SLEEP30
   end
   config.vm.define 'block1' do |machine|
     node = 'block1'
@@ -1850,8 +1852,9 @@ SCRIPT
     machine.vm.provision :shell, :inline => 'yum -y install lvm2'
     machine.vm.provision :shell, :inline => 'systemctl enable lvm2-lvmetad.service'
     machine.vm.provision :shell, :inline => 'systemctl start lvm2-lvmetad.service'
+    machine.vm.provision :shell, :inline => 'if `pvs /dev/vdb > /dev/null`; then pvremove /dev/vdb; fi'
     machine.vm.provision :shell, :inline => 'pvcreate /dev/vdb'
-    machine.vm.provision :shell, :inline => 'if `vgs cinder-volumes`; then vgremove -f cinder-volumes; fi'
+    machine.vm.provision :shell, :inline => 'if `vgs cinder-volumes > /dev/null`; then vgremove -f cinder-volumes; fi'
     machine.vm.provision :shell, :inline => 'vgcreate cinder-volumes /dev/vdb'
     machine.vm.provision :shell, :inline => 'sed -i "/Accept every block device:/i   filter = [ \"a/vda/\", \"a/vdb/\", \"r/.*/\"]" /etc/lvm/lvm.conf'
     machine.vm.provision :shell, :inline => 'yum -y install openstack-cinder targetcli python-keystone'
@@ -1981,5 +1984,6 @@ SCRIPT
     end
     machine.vm.provision :shell, :inline => 'systemctl enable openstack-cinder-volume.service target.service'
     machine.vm.provision :shell, :inline => 'systemctl start openstack-cinder-volume.service target.service'
+    machine.vm.provision :shell, :inline => SLEEP30
   end
 end

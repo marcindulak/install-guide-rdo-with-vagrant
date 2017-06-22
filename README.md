@@ -2,7 +2,7 @@
 Description
 -----------
 
-An unattended https://docs.openstack.org/ocata/install-guide-rdo performed on CentOS 7 nodes managed by Vagrant
+An unattended https://docs.openstack.org/ocata/install-guide-rdo performed on CentOS 7 nodes managed by `vagrant`
 using libvirt/kvm nested virtualization. Requires a Linux host.
 
 [Vagrantfile](Vagrantfile) follows the guide as closely as possible,
@@ -15,7 +15,7 @@ The purpose of this setup is to serve as a repeatable base for learning about `o
 It is similar to https://github.com/openstack/training-labs except that this setup focuses on bringing up and
 configuring all components of the rdo guide in an unattended way.
 
-Currently the setup includes: keystone, glance, nova, neutron, horizon and cinder.
+Currently the setup includes: `keystone`, `glance`, `nova`, `neutron`, `horizon` and `cinder`.
 
 The setup requires 8GB RAM and 10GB disk space.
 
@@ -28,15 +28,15 @@ Tested on:
 Configuration overview
 ----------------------
 
-The network setup uses "Networking Option 2: Self-service networks" https://docs.openstack.org/ocata/install-guide-rdo/neutron-controller-install-option2.html ,
+The network setup uses "Networking Option 2: Self-service networks" https://docs.openstack.org/ocata/install-guide-rdo/neutron-controller-install-option2.html,
 presented on the horizon dashboard as follows:
 
-![http://controller/dashboard/admin/networks/](https://raw.github.com/marcindulak/vagrant-install-guide-rdo/master/screenshots/controller!dashboard!admin!networks-1366x768.png)
+![http://controller/dashboard/admin/networks/](https://raw.github.com/marcindulak/install-guide-rdo-with-vagrant/master/screenshots/controller!dashboard!admin!networks-1366x768.png)
 
-Vagrant reserves eth0 and this cannot be currently changed (see https://github.com/mitchellh/vagrant/issues/2093).
+`vagrant` reserves eth0 and this cannot be currently changed (see https://github.com/mitchellh/vagrant/issues/2093).
 
-The private networks are assigned to the eth1 (`vagrant-install-guide-rdo-management`) and eth2 interfaces
-(`vagrant-install-guide-rdo-provider`) according to the `Network Layout`
+The private networks are assigned to the eth1 (`install-guide-rdo-with-vagrant-management`) and eth2 interfaces
+(`install-guide-rdo-with-vagrant-provider`) according to the `Network Layout`
 depicted at https://docs.openstack.org/ocata/install-guide-rdo/environment-networking.html
 The **X** denotes the possibility of horizontal scaling of the given `openstack` component located on the given server VM,
 by increasing the count of **X** in [Vagrantfile](Vagrantfile).
@@ -109,16 +109,16 @@ Sample Usage
 
 Configure the `openstack` components with:
 
-        $ git clone https://github.com/marcindulak/vagrant-install-guide-rdo.git
-        $ cd vagrant-install-guide-rdo
+        $ git clone https://github.com/marcindulak/install-guide-rdo-with-vagrant.git
+        $ cd install-guide-rdo-with-vagrant
         $ vagrant plugin install vagrant-libvirt
         $ vagrant up --no-parallel controller compute1 block1
 
 Verify the network settings of the VMs match the diagram above:
 
        $ virsh net-list
-       $ virsh net-dumpxml vagrant-install-guide-rdo-management
-       $ virsh net-dumpxml vagrant-install-guide-rdo-provider
+       $ virsh net-dumpxml install-guide-rdo-with-vagrant-management
+       $ virsh net-dumpxml install-guide-rdo-with-vagrant-provider
 
 Launching an instance is performed as **demo** user according to https://docs.openstack.org/ocata/install-guide-rdo/launch-instance-selfservice.html
 
@@ -138,9 +138,9 @@ Launching an instance is performed as **demo** user according to https://docs.op
 
         $ vagrant ssh controller -c "source /root/demo-openrc&& openstack security group list"
 
-Make sure the `conpute1` host is discovered:
+- Make sure the `conpute1` host is discovered:
 
-        $ vagrant ssh controller -c "source /root/admin-openrc&& su -s /bin/sh -c 'nova-manage cell_v2 discover_hosts --verbose' nova"
+        $ vagrant ssh controller -c "source /root/admin-openrc&& sudo su -s /bin/sh -c 'nova-manage cell_v2 discover_hosts --verbose' nova"
 
 - "Launch the instance":
 
@@ -158,15 +158,16 @@ Make sure the `conpute1` host is discovered:
 
 - "Associate the floating IP address with the instance:"
 
-        $ vagrant ssh controller -c "source /root/demo-openrc&& openstack server add floating ip selfservice-instance `openstack floating ip list -f value | cut -d' ' -f2`"
+        $ IP=$(vagrant ssh controller -c "source /root/demo-openrc&& openstack floating ip list -f value | cut -d' ' -f2")
+        $ vagrant ssh controller -c "source /root/demo-openrc&& openstack server add floating ip selfservice-instance $IP"
 
 - "Verify connectivity to the instance via floating IP address":
 
         $ vagrant ssh controller -c 'source /root/demo-openrc&& ping -W 1 -c 4 `openstack server show selfservice-instance -f json -c addresses |  jq ".addresses" | tr -d \" | tr -d " " | cut -d, -f2`'
 
-- "Access your instance using SSH":
+- "Access your instance using SSH". Note that this command is executed as **vagrant** user, who has access to **root** ssh private key granted using `setfacl`:
 
-        $ vagrant ssh controller -c 'source /root/demo-openrc&& ssh -o StrictHostKeyChecking=no cirros@`openstack server show selfservice-instance -f json -c addresses |  jq ".addresses" | tr -d \" | tr -d " " | cut -d, -f2` ip addr show'
+        $ vagrant ssh controller -c 'source /root/demo-openrc&& ssh -i /root/.ssh/id_rsa -o StrictHostKeyChecking=no cirros@`openstack server show selfservice-instance -f json -c addresses |  jq ".addresses" | tr -d \" | tr -d " " | cut -d, -f2` ip addr show'
 
 Attach block storage to the instance according to https://docs.openstack.org/ocata/install-guide-rdo/launch-instance-cinder.html
 
@@ -183,10 +184,10 @@ Attach block storage to the instance according to https://docs.openstack.org/oca
 
    and verify the presence of the volume:
 
-        $ vagrant ssh controller -c "source /root/demo-openrc&& ssh -o StrictHostKeyChecking=no cirros@`openstack server show selfservice-instance -f json -c addresses |  jq ".addresses" | tr -d \" | tr -d " " | cut -d, -f2` sudo fdisk -l /dev/vda"
+        $ vagrant ssh controller -c "source /root/demo-openrc&& ssh -i /root/.ssh/id_rsa -o StrictHostKeyChecking=no cirros@`openstack server show selfservice-instance -f json -c addresses |  jq ".addresses" | tr -d \" | tr -d " " | cut -d, -f2` sudo fdisk -l /dev/vda"
 
 
-The horizon dashboard is accessible on and **outside** of your Vagrant host port 8080. If you prefer to disable external access to this port
+The horizon dashboard is accessible on and **outside** of your `vagrant` host port 8080. If you prefer to disable external access to this port
 modify the `forwarded_port` line of [Vagrantfile](Vagrantfile) according to https://github.com/vagrant-libvirt/vagrant-libvirt#forwarded-ports
 See [Vagrantfile](Vagrantfile) for **admin** and **demo** users credentials.
 
@@ -196,10 +197,12 @@ Use e.g. https://github.com/sindresorhus/pageres for making unattended screensho
 
         $ vagrant ssh controller -c "sudo -u vagrant pageres 'http://controller/dashboard/admin/networks/' --cookie='`sh /vagrant/get_horizon_session_cookie.sh`'"
 
-of from the Vagrant host:
+of from the `vagrant` host:
 
         $ COOKIE=$(vagrant ssh controller -c "sh /vagrant/get_horizon_session_cookie.sh")
         $ pageres 'http://localhost:8080/dashboard/admin/networks/' --cookie="$COOKIE"
+
+TODO: create another user and launch another instance.
 
 When done, destroy the test machines with:
 
