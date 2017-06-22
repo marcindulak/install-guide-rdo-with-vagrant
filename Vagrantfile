@@ -126,14 +126,14 @@ Vagrant.configure(2) do |config|
         # https://github.com/vagrant-libvirt/vagrant-libvirt/issues/289
         p.default_prefix = ''
         if node.start_with?('block')
-          p.storage :file, :size => '2G', :path => arch[node]['hostname'] + '_sdb.img', :allow_existing => true, :shareable => false, :type => 'raw'
+          p.storage :file, :size => '2G', :path => arch[node]['hostname'] + '_sdb.img', :allow_existing => false, :shareable => false, :type => 'raw'
         end
       end
       # configure additional network interfaces (eth0 is used by Vagrant for management)
       (1..(arch[node]['Hardware Requirements']['NIC'])).to_a.each do |interface|
         if interface == 1
           ip = arch[node]['IP address']  # first interface (eth1) settings are defined
-          libvirt__network_name = 'vagrant-install-guide-rdo-selfservice'
+          libvirt__network_name = 'vagrant-install-guide-rdo-management'
         else
           ip = '203.0.113.' + arch[node]['IP address'].split('.')[-1]  # use dummy network for the remaining interfaces
           libvirt__network_name = 'vagrant-install-guide-rdo-provider'
@@ -1711,8 +1711,8 @@ SCRIPT
     machine.vm.provision :shell, :inline => 'echo OPENSTACK_HOST = \"controller\" >> /etc/openstack-dashboard/local_settings'
     machine.vm.provision :shell, :inline => 'echo ALLOWED_HOSTS = [\"*\"] >> /etc/openstack-dashboard/local_settings'
     # https://ask.openstack.org/en/question/91657/runtimeerror-unable-to-create-a-new-session-key-it-is-likely-that-the-cache-is-unavailable-authorization-failed-the-request-you-have-made-requires/
-    #machine.vm.provision :shell, :inline => 'echo SESSION_ENGINE = \"django.contrib.sessions.backends.cache\" >> /etc/openstack-dashboard/local_settings'
-    machine.vm.provision :shell, :inline => 'echo SESSION_ENGINE = \"django.contrib.sessions.backends.file\" >> /etc/openstack-dashboard/local_settings'
+    machine.vm.provision :shell, :inline => 'echo SESSION_ENGINE = \"django.contrib.sessions.backends.cache\" >> /etc/openstack-dashboard/local_settings'
+    #machine.vm.provision :shell, :inline => 'echo SESSION_ENGINE = \"django.contrib.sessions.backends.file\" >> /etc/openstack-dashboard/local_settings'
     machine.vm.provision :shell, :inline => 'echo CACHES = {\"default\": {\"BACKEND\": \"django.core.cache.backends.memcached.MemcachedCache\", \"LOCATION\": \"controller:11211\",}} >> /etc/openstack-dashboard/local_settings'
     machine.vm.provision :shell, :inline => 'echo OPENSTACK_KEYSTONE_URL = \"http://%s:5000/v3\" % OPENSTACK_HOST >> /etc/openstack-dashboard/local_settings'
     machine.vm.provision :shell, :inline => 'echo OPENSTACK_KEYSTONE_MULTIDOMAIN_SUPPORT = True >> /etc/openstack-dashboard/local_settings'
@@ -1851,9 +1851,10 @@ SCRIPT
     machine.vm.provision :shell, :inline => 'yum -y install lvm2'
     machine.vm.provision :shell, :inline => 'systemctl enable lvm2-lvmetad.service'
     machine.vm.provision :shell, :inline => 'systemctl start lvm2-lvmetad.service'
+    machine.vm.provision :shell, :inline => 'if `vgs cinder-volumes > /dev/null`; then vgremove -f cinder-volumes; fi'
+    machine.vm.provision :shell, :inline => SLEEP30
     machine.vm.provision :shell, :inline => 'if `pvs /dev/vdb > /dev/null`; then pvremove /dev/vdb; fi'
     machine.vm.provision :shell, :inline => 'pvcreate /dev/vdb'
-    machine.vm.provision :shell, :inline => 'if `vgs cinder-volumes > /dev/null`; then vgremove -f cinder-volumes; fi'
     machine.vm.provision :shell, :inline => 'vgcreate cinder-volumes /dev/vdb'
     machine.vm.provision :shell, :inline => 'sed -i "/Accept every block device:/i   filter = [ \"a/vda/\", \"a/vdb/\", \"r/.*/\"]" /etc/lvm/lvm.conf'
     machine.vm.provision :shell, :inline => 'yum -y install openstack-cinder targetcli python-keystone'

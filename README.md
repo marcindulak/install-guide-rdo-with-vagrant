@@ -111,6 +111,7 @@ Configure the `openstack` components with:
 
         $ git clone https://github.com/marcindulak/install-guide-rdo-with-vagrant.git
         $ cd install-guide-rdo-with-vagrant
+        $ for net in `virsh -q net-list --all | grep install-guide-rdo-with-vagrant | awk '{print $1}'`; do virsh net-destroy $net; virsh net-undefine $net; done  # cleanup any leftover networks if this is not the first run
         $ vagrant plugin install vagrant-libvirt
         $ vagrant up --no-parallel controller compute1 block1
 
@@ -151,6 +152,7 @@ Launching an instance is performed as **demo** user according to https://docs.op
         $ vagrant ssh controller -c "source /root/demo-openrc&& openstack server list"
         $ sleep 30
         $ vagrant ssh controller -c "source /root/demo-openrc&& openstack server list"
+        $ vagrant ssh controller -c "source /root/demo-openrc&& openstack server show selfservice-instance"
 
 - "Create a floating IP address on the provider virtual network":
 
@@ -158,7 +160,7 @@ Launching an instance is performed as **demo** user according to https://docs.op
 
 - "Associate the floating IP address with the instance:"
 
-        $ IP=$(vagrant ssh controller -c "source /root/demo-openrc&& openstack floating ip list -f value | cut -d' ' -f2")
+        $ IP=$(vagrant ssh controller -c "source /root/demo-openrc&& openstack floating ip list -f value | cut -d' ' -f2 | tr -d '\r\n'")
         $ vagrant ssh controller -c "source /root/demo-openrc&& openstack server add floating ip selfservice-instance $IP"
 
 - "Verify connectivity to the instance via floating IP address":
@@ -180,12 +182,12 @@ Attach block storage to the instance according to https://docs.openstack.org/oca
 - "Attach the volume to an instance":
 
         $ vagrant ssh controller -c "source /root/demo-openrc&& openstack server add volume selfservice-instance volume1"
+        $ sleep 30
         $ vagrant ssh controller -c "source /root/demo-openrc&& openstack volume list"
 
-   and verify the presence of the volume:
+   and verify the presence of the volume (TODO: attaching this volume fails, investigating this):
 
-        $ vagrant ssh controller -c "source /root/demo-openrc&& ssh -i ~vagrant/.ssh/id_rsa -o StrictHostKeyChecking=no cirros@`openstack server show selfservice-instance -f json -c addresses |  jq ".addresses" | tr -d \" | tr -d " " | cut -d, -f2` sudo fdisk -l /dev/vda"
-
+        $ vagrant ssh controller -c 'source /root/demo-openrc&& ssh -i ~vagrant/.ssh/id_rsa -o StrictHostKeyChecking=no cirros@`openstack server show selfservice-instance -f json -c addresses |  jq ".addresses" | tr -d \" | tr -d " " | cut -d, -f2` sudo fdisk -l /dev/vdb'
 
 The horizon dashboard is accessible on and **outside** of your `vagrant` host port 8080. If you prefer to disable external access to this port
 modify the `forwarded_port` line of [Vagrantfile](Vagrantfile) according to https://github.com/vagrant-libvirt/vagrant-libvirt#forwarded-ports
@@ -195,7 +197,7 @@ See [Vagrantfile](Vagrantfile) for **admin** and **demo** users credentials.
 
 Use e.g. https://github.com/sindresorhus/pageres for making unattended screenshots of horizon, from `controller`, where `pageres` is already installed:
 
-        $ vagrant ssh controller -c "sudo -u vagrant pageres 'http://controller/dashboard/admin/networks/' --cookie='`sh /vagrant/get_horizon_session_cookie.sh`'"
+        $ vagrant ssh controller -c 'sudo su - vagrant -c "pageres http://controller/dashboard/admin/networks/ --cookie=\"$(sh /vagrant/get_horizon_session_cookie.sh)\""'
 
 of from the `vagrant` host:
 
@@ -221,6 +223,13 @@ License
 -------
 
 BSD 2-clause
+
+
+-----------------------------
+Bugs found using this project
+-----------------------------
+
+- https://bugs.launchpad.net/openstack-manuals/+bug/1698455
 
 
 ----
