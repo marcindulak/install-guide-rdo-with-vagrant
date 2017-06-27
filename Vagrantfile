@@ -1932,12 +1932,12 @@ SCRIPT
       s.args   = ['/etc/cinder/cinder.conf',
                   'keystone_authtoken', 'password', Passwords['CINDER_PASS'], LABEL_CRUDINI]
     end
-    # management interface IP address of the controller node
+    # management interface IP address of the storage node
     machine.vm.provision 'shell' do |s|
       s.inline = $crudini_set
       # config_file, section, parameter, value, label_crudini
       s.args   = ['/etc/cinder/cinder.conf',
-                  'DEFAULT', 'my_ip', arch['controller']['IP address'], LABEL_CRUDINI]
+                  'DEFAULT', 'my_ip', arch[node]['IP address'], LABEL_CRUDINI]
     end
     machine.vm.provision 'shell' do |s|
       s.inline = $crudini_set

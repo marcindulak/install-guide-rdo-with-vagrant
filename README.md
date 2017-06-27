@@ -117,9 +117,9 @@ Configure the `openstack` components with:
 
 Verify the network settings of the VMs match the diagram above:
 
-       $ virsh net-list
-       $ virsh net-dumpxml install-guide-rdo-with-vagrant-management
-       $ virsh net-dumpxml install-guide-rdo-with-vagrant-provider
+        $ virsh net-list
+        $ virsh net-dumpxml install-guide-rdo-with-vagrant-management
+        $ virsh net-dumpxml install-guide-rdo-with-vagrant-provider
 
 Launching an instance is performed as **demo** user according to https://docs.openstack.org/ocata/install-guide-rdo/launch-instance-selfservice.html
 
