@@ -118,7 +118,7 @@ Vagrant.configure(2) do |config|
         p.memory = arch[node]['Hardware Requirements']['RAM']
         p.nested = true
         # https://github.com/vagrant-libvirt/vagrant-libvirt: management_network_address defaults to 192.168.121.0/24
-        p.management_network_name = 'vagrant-install-guide-rdo'
+        p.management_network_name = 'install-guide-rdo-with-vagrant'
         p.management_network_address = '192.168.122.0/24'
         # https://github.com/vagrant-libvirt/vagrant-libvirt/issues/402
         p.management_network_mode = 'nat'
@@ -133,10 +133,10 @@ Vagrant.configure(2) do |config|
       (1..(arch[node]['Hardware Requirements']['NIC'])).to_a.each do |interface|
         if interface == 1
           ip = arch[node]['IP address']  # first interface (eth1) settings are defined
-          libvirt__network_name = 'vagrant-install-guide-rdo-management'
+          libvirt__network_name = 'install-guide-rdo-with-vagrant-management'
         else
           ip = '203.0.113.' + arch[node]['IP address'].split('.')[-1]  # use dummy network for the remaining interfaces
-          libvirt__network_name = 'vagrant-install-guide-rdo-provider'
+          libvirt__network_name = 'install-guide-rdo-with-vagrant-provider'
         end
         # generate unique MAC address for this ip + interface
         mac = '08:00:27:' + Digest::MD5.hexdigest(ip + interface.to_s).slice(0, 6).scan(/.{1,2}/).join(':')
@@ -1711,8 +1711,8 @@ SCRIPT
     machine.vm.provision :shell, :inline => 'echo OPENSTACK_HOST = \"controller\" >> /etc/openstack-dashboard/local_settings'
     machine.vm.provision :shell, :inline => 'echo ALLOWED_HOSTS = [\"*\"] >> /etc/openstack-dashboard/local_settings'
     # https://ask.openstack.org/en/question/91657/runtimeerror-unable-to-create-a-new-session-key-it-is-likely-that-the-cache-is-unavailable-authorization-failed-the-request-you-have-made-requires/
-    machine.vm.provision :shell, :inline => 'echo SESSION_ENGINE = \"django.contrib.sessions.backends.cache\" >> /etc/openstack-dashboard/local_settings'
-    #machine.vm.provision :shell, :inline => 'echo SESSION_ENGINE = \"django.contrib.sessions.backends.file\" >> /etc/openstack-dashboard/local_settings'
+    #machine.vm.provision :shell, :inline => 'echo SESSION_ENGINE = \"django.contrib.sessions.backends.cache\" >> /etc/openstack-dashboard/local_settings'
+    machine.vm.provision :shell, :inline => 'echo SESSION_ENGINE = \"django.contrib.sessions.backends.file\" >> /etc/openstack-dashboard/local_settings'
     machine.vm.provision :shell, :inline => 'echo CACHES = {\"default\": {\"BACKEND\": \"django.core.cache.backends.memcached.MemcachedCache\", \"LOCATION\": \"controller:11211\",}} >> /etc/openstack-dashboard/local_settings'
     machine.vm.provision :shell, :inline => 'echo OPENSTACK_KEYSTONE_URL = \"http://%s:5000/v3\" % OPENSTACK_HOST >> /etc/openstack-dashboard/local_settings'
     machine.vm.provision :shell, :inline => 'echo OPENSTACK_KEYSTONE_MULTIDOMAIN_SUPPORT = True >> /etc/openstack-dashboard/local_settings'

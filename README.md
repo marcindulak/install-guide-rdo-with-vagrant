@@ -187,7 +187,7 @@ Attach block storage to the instance according to https://docs.openstack.org/oca
 
    and verify the presence of the volume (TODO: attaching this volume fails, investigating this):
 
-        $ vagrant ssh controller -c 'source /root/demo-openrc&& ssh -i ~vagrant/.ssh/id_rsa -o StrictHostKeyChecking=no cirros@`openstack server show selfservice-instance -f json -c addresses |  jq ".addresses" | tr -d \" | tr -d " " | cut -d, -f2` sudo fdisk -l /dev/vdb'
+        $ vagrant ssh controller -c 'source /root/demo-openrc&& ssh -i ~vagrant/.ssh/id_rsa -o StrictHostKeyChecking=no cirros@`openstack server show selfservice-instance -f json -c addresses |  jq ".addresses" | tr -d \" | tr -d " " | cut -d, -f2` sudo /sbin/fdisk -l /dev/vdb'
 
 The horizon dashboard is accessible on and **outside** of your `vagrant` host port 8080. If you prefer to disable external access to this port
 modify the `forwarded_port` line of [Vagrantfile](Vagrantfile) according to https://github.com/vagrant-libvirt/vagrant-libvirt#forwarded-ports
