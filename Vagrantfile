@@ -403,12 +403,26 @@ SCRIPT
     machine.vm.provision :shell, :inline => 'rabbitmqctl set_permissions openstack ".*" ".*" ".*"'
     # https://docs.openstack.org/ocata/install-guide-rdo/environment-memcached.html
     machine.vm.provision :shell, :inline => 'yum -y install memcached python-memcached'
+    # Must not specify ::1 in /etc/sysconfig/memcached if IPv6 is disabled, otherwise memcached fails
+    # Jun 30 20:15:06 localhost systemd: Binding to IPv6 address not available since kernel does not support IPv6.
+    # Jun 30 20:15:06 localhost yum[28299]: Installed: 1:openstack-dashboard-11.0.1-2.el7.noarch
+    # Jun 30 20:15:10 localhost systemd: Stopping The Apache HTTP Server...
+    # Jun 30 20:15:12 localhost systemd: Started memcached daemon.
+    # Jun 30 20:15:12 localhost systemd: Starting memcached daemon...
+    # Jun 30 20:15:12 localhost systemd: Starting The Apache HTTP Server...
+    # Jun 30 20:15:12 localhost memcached: bind(): Cannot assign requested address
+    # Jun 30 20:15:12 localhost memcached: failed to listen on TCP port 11211: Cannot assign requested address
+    # Jun 30 20:15:12 localhost systemd: memcached.service: main process exited, code=exited, status=71/n/a
     machine.vm.provision 'shell' do |s|
       s.inline = $crudini_set
       # config_file, section, parameter, value, label_crudini
       s.args   = ['/etc/sysconfig/memcached',
-                  '', 'OPTIONS', '"-l 127.0.0.1,::1,controller"', LABEL_CRUDINI]
+                  '', 'OPTIONS', '"-l 127.0.0.1,controller"', LABEL_CRUDINI]
+                  #'', 'OPTIONS', '"-l 127.0.0.1,::1,controller"', LABEL_CRUDINI]
     end
+    # https://bugs.launchpad.net/tripleo/+bug/1638646 - this is only a warning
+    #machine.vm.provision :shell, :inline => 'crudini --del /usr/lib/systemd/system/memcached.service "Service" MemoryDenyWriteExecute'
+    #machine.vm.provision :shell, :inline => 'systemctl daemon-reload'
     machine.vm.provision :shell, :inline => 'systemctl enable memcached.service'
     machine.vm.provision :shell, :inline => 'systemctl start memcached.service'
     # https://docs.openstack.org/ocata/install-guide-rdo/keystone-install.html
@@ -1711,8 +1725,9 @@ SCRIPT
     machine.vm.provision :shell, :inline => 'echo OPENSTACK_HOST = \"controller\" >> /etc/openstack-dashboard/local_settings'
     machine.vm.provision :shell, :inline => 'echo ALLOWED_HOSTS = [\"*\"] >> /etc/openstack-dashboard/local_settings'
     # https://ask.openstack.org/en/question/91657/runtimeerror-unable-to-create-a-new-session-key-it-is-likely-that-the-cache-is-unavailable-authorization-failed-the-request-you-have-made-requires/
-    #machine.vm.provision :shell, :inline => 'echo SESSION_ENGINE = \"django.contrib.sessions.backends.cache\" >> /etc/openstack-dashboard/local_settings'
-    machine.vm.provision :shell, :inline => 'echo SESSION_ENGINE = \"django.contrib.sessions.backends.file\" >> /etc/openstack-dashboard/local_settings'
+    # Use django.contrib.sessions.backends.file if memcached fails
+    #machine.vm.provision :shell, :inline => 'echo SESSION_ENGINE = \"django.contrib.sessions.backends.file\" >> /etc/openstack-dashboard/local_settings'
+    machine.vm.provision :shell, :inline => 'echo SESSION_ENGINE = \"django.contrib.sessions.backends.cache\" >> /etc/openstack-dashboard/local_settings'
     machine.vm.provision :shell, :inline => 'echo CACHES = {\"default\": {\"BACKEND\": \"django.core.cache.backends.memcached.MemcachedCache\", \"LOCATION\": \"controller:11211\",}} >> /etc/openstack-dashboard/local_settings'
     machine.vm.provision :shell, :inline => 'echo OPENSTACK_KEYSTONE_URL = \"http://%s:5000/v3\" % OPENSTACK_HOST >> /etc/openstack-dashboard/local_settings'
     machine.vm.provision :shell, :inline => 'echo OPENSTACK_KEYSTONE_MULTIDOMAIN_SUPPORT = True >> /etc/openstack-dashboard/local_settings'

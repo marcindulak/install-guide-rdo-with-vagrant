@@ -185,7 +185,7 @@ Attach block storage to the instance according to https://docs.openstack.org/oca
         $ sleep 30
         $ vagrant ssh controller -c "source /root/demo-openrc&& openstack volume list"
 
-   and verify the presence of the volume (TODO: attaching this volume fails, investigating this):
+   and verify the presence of the volume:
 
         $ vagrant ssh controller -c 'source /root/demo-openrc&& ssh -i ~vagrant/.ssh/id_rsa -o StrictHostKeyChecking=no cirros@`openstack server show selfservice-instance -f json -c addresses |  jq ".addresses" | tr -d \" | tr -d " " | cut -d, -f2` sudo /sbin/fdisk -l /dev/vdb'
 
